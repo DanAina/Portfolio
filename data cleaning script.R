@@ -64,5 +64,5 @@ final_data <- google_trends_data %>%
 # Print the first few rows of the final data
 head(final_data)
 
-
+1+1
 
