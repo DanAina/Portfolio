@@ -68,6 +68,7 @@ final_data <- aggregated_data %>%
 threshold <- median(final_data$`median_earnings_`) # The median threshold income is 42,000
 
 
+ 
 
 
 
@@ -95,7 +96,7 @@ release_date <- as.Date("2015-09-01")
 # regression 
 
 # Binary regression analysis
-reg_model <- feols(log(mean_std_index) ~ HighEarning +LowEarning + monthly_date, data = final_data)
+reg_model <- feols(log(mean_std_index) ~ HighEarning +LowEarning + PostScorecard, data = final_data)
 
  etable(reg_model)
 # Print model summary
@@ -116,8 +117,35 @@ ggplot(final_data, aes(x = median_earnings_ , y = mean_std_index, color = factor
   theme_minimal()
 
 
+# prescorecard card data
+
+pre_scorecard_data <- aggregated_data %>%
+  inner_join(filtered_id_name_data, by = "schname") %>%
+  inner_join(scorecard_data, by = c("unitid" = "UNITID", "opeid" = "OPEID")) %>%
+  filter(PREDDEG == 3) %>% filter(monthly_date <= as.Date("2015-09-01")) %>%
+  rename("median_earnings_" = "md_earn_wne_p10-REPORTED-EARNINGS")
 
 
+threshold <- median(pre_scorecard_data$`median_earnings_`) # The median threshold income is 42,000
+
+pre_scorecard_data$PostScorecard <- ifelse(pre_scorecard_data$monthly_date >= release_date, 1, 0)
+
+# Regression Analysis  for dates before score card release vs after
+library(fixest)
+
+pre_scorecard_data$HighEarning <- ifelse(pre_scorecard_data$median_earnings_ >= threshold, 1, 0)
+
+pre_scorecard_data$LowEarning <- ifelse(pre_scorecard_data$median_earnings_ <= threshold, 1, 0)
+
+
+#create date value for date
+release_date <- as.Date("2015-09-01")
+
+pre_score_reg_model <- feols(log(mean_std_index) ~ HighEarning +LowEarning, data = pre_scorecard_data)
+
+etable(reg_model)
+# Print model summary
+summary(reg_model)
 
 
 
